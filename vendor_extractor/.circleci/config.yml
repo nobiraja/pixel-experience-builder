@@ -1,0 +1,36 @@
+version: 2.1
+executors:
+  my-custom-executor:
+    docker:
+      - image: ghcr.io/sushrut1101/docker:arch
+        
+jobs:
+  my-job-name:
+
+    executor: my-custom-executor
+    steps:
+      - checkout
+      - run: |
+         ssh-keyscan -t rsa gitlab.com >> ~/.ssh/known_hosts
+         ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+         chmod 600 ~/.ssh/id_rsa
+         cd ~/.ssh
+         cat id_rsa.pub
+         git config --global user.name "nobiraja"
+         git config --global user.email "as3776958@gmail.com"
+         repo init --depth=1 --no-repo-verify -u https://github.com/LineageOS/android.git -b lineage-20.0 --git-lfs -g default,-mips,-darwin,-notdefault
+         git clone https://github.com/nobiraja/local_manifest.git --depth 1 -b main .repo/local_manifests
+         repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune --force-sync -j8
+         source build/envsetup.sh
+         lunch lineage_CPH2381-userdebug
+         export KBUILD_BUILD_USER=nobiraja
+         export KBUILD_BUILD_HOST=nobiraja
+         export BUILD_USERNAME=nobiraja
+         export BUILD_HOSTNAME=nobiraja
+         export BUILD_BROKEN_MISSING_REQUIRED_MODULES=true
+         export TZ=Asia/Dhaka #put before last build command
+         make updatepackage
+workflows:
+  my-custom-workflow:
+    jobs:
+      - my-job-name
